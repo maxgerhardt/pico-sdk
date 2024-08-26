@@ -1,0 +1,19 @@
+{
+  "name": "framework-picosdk",
+  "version": "1.20000.0",
+  "description": "Arduino Wiring-based Framework (RPi Pico RP2040)",
+  "keywords": [
+    "framework",
+    "Pico-SDK",
+    "Cortex-M",
+    "RISC-V",
+    "Raspberry Pi",
+    "RP2040",
+    "RP2350"
+  ],
+  "homepage": "https://www.raspberrypi.com/documentation/pico-sdk/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raspberrypi/pico-sdk"
+  }
+}
