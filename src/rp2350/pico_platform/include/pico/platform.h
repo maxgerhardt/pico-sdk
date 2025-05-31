@@ -30,6 +30,14 @@
 #endif
 
 // PICO_CONFIG: PICO_RP2350A, Whether the current board has an RP2350 in an A (30 GPIO) package, type=bool, default=Usually provided via board header, group=pico_platform
+#if 0 // make tooling checks happy
+#define PICO_RP2350A 0
+#endif
+
+// PICO_CONFIG: PICO_RP2350_A2_SUPPORTED, Whether to include any specific software support for RP2350 A2 revision, type=bool, default=1, advanced=true, group=pico_platform
+#ifndef PICO_RP2350_A2_SUPPORTED
+#define PICO_RP2350_A2_SUPPORTED 1
+#endif
 
 // PICO_CONFIG: PICO_STACK_SIZE, Minimum amount of stack space reserved in the linker script for each core. See also PICO_CORE1_STACK_SIZE, min=0x100, default=0x800, advanced=true, group=pico_platform
 #ifndef PICO_STACK_SIZE
@@ -55,7 +63,16 @@
 #define PICO_USE_STACK_GUARDS 0
 #endif
 
+// PICO_CONFIG: PICO_CLKDIV_ROUND_NEAREST, True if floating point clock divisors should be rounded to the nearest possible clock divisor by default rather than rounding down, type=bool, default=1, group=pico_platform
+#ifndef PICO_CLKDIV_ROUND_NEAREST
+#define PICO_CLKDIV_ROUND_NEAREST 1
+#endif
+
 #ifndef __ASSEMBLER__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*! \brief No-op function for the body of tight loops
  *  \ingroup pico_platform
@@ -99,11 +116,9 @@ static inline void busy_wait_at_least_cycles(uint32_t minimum_cycles) {
     );
 }
 
-// PICO_CONFIG: PICO_NO_FPGA_CHECK, Remove the FPGA platform check for small code size reduction, type=bool, default=platform dependent, advanced=true, group=pico_runtime
+// PICO_CONFIG: PICO_NO_FPGA_CHECK, Remove the FPGA platform check for small code size reduction, type=bool, default=1, advanced=true, group=pico_runtime
 #ifndef PICO_NO_FPGA_CHECK
-#if !PICO_RP2040
 #define PICO_NO_FPGA_CHECK 1
-#endif
 #endif
 
 // PICO_CONFIG: PICO_NO_SIM_CHECK, Remove the SIM platform check for small code size reduction, type=bool, default=1, advanced=true, group=pico_runtime
@@ -246,7 +261,7 @@ static inline uint8_t rp2040_rom_version(void) {
  */
 __force_inline static int32_t __mul_instruction(int32_t a, int32_t b) {
 #ifdef __riscv
-    __asm ("mul %0, %0, %1" : "+l" (a) : "l" (b) : );
+    __asm ("mul %0, %0, %1" : "+r" (a) : "r" (b) : );
 #else
     pico_default_asm ("muls %0, %1"     : "+l" (a) : "l" (b) : "cc");
 #endif
@@ -269,6 +284,10 @@ __force_inline static int32_t __mul_instruction(int32_t a, int32_t b) {
 #define __fast_mul(a, b) __builtin_choose_expr(__builtin_constant_p(b) && !__builtin_constant_p(a), \
     (__builtin_popcount(b) >= 2 ? __mul_instruction(a,b) : (a)*(b)), \
     (a)*(b))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __ASSEMBLER__
 

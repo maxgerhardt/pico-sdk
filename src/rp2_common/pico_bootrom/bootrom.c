@@ -14,20 +14,9 @@ void *rom_func_lookup(uint32_t code) {
     return rom_func_lookup_inline(code);
 }
 
-#pragma GCC diagnostic push
-// diagnostic: GCC thinks near-zero value is a null pointer member access, but it's not
-#pragma GCC diagnostic ignored "-Warray-bounds"
 void *rom_data_lookup(uint32_t code) {
-#if PICO_RP2040
-    rom_table_lookup_fn rom_table_lookup = (rom_table_lookup_fn) rom_hword_as_ptr(BOOTROM_TABLE_LOOKUP_OFFSET);
-    uint16_t *data_table = (uint16_t *) rom_hword_as_ptr(BOOTROM_DATA_TABLE_OFFSET);
-    return rom_table_lookup(data_table, code);
-#else
-    rom_table_lookup_fn rom_table_lookup = (rom_table_lookup_fn) (uintptr_t)*(uint16_t*)(BOOTROM_TABLE_LOOKUP_OFFSET);
-    return rom_table_lookup(code, RT_FLAG_DATA);
-#endif
+    return rom_data_lookup_inline(code);
 }
-#pragma GCC diagnostic pop
 /// \end::table_lookup[]
 
 bool rom_funcs_lookup(uint32_t *table, unsigned int count) {
@@ -52,6 +41,26 @@ void __attribute__((noreturn)) rom_reset_usb_boot(uint32_t usb_activity_gpio_pin
         usb_activity_gpio_pin_mask = (uint32_t)__builtin_ctz(usb_activity_gpio_pin_mask);
     }
     rom_reboot(REBOOT2_FLAG_REBOOT_TYPE_BOOTSEL | REBOOT2_FLAG_NO_RETURN_ON_SUCCESS, 10, flags, usb_activity_gpio_pin_mask);
+    __builtin_unreachable();
+#else
+    panic_unsupported();
+#endif
+}
+
+void __attribute__((noreturn)) rom_reset_usb_boot_extra(int usb_activity_gpio_pin, uint32_t disable_interface_mask, bool usb_activity_gpio_pin_active_low) {
+#ifdef ROM_FUNC_RESET_USB_BOOT
+    (void)usb_activity_gpio_pin_active_low;
+    rom_reset_usb_boot_fn func = (rom_reset_usb_boot_fn) rom_func_lookup(ROM_FUNC_RESET_USB_BOOT);
+    func(usb_activity_gpio_pin < 0 ? 0 : (1u << usb_activity_gpio_pin), disable_interface_mask);
+#elif defined(ROM_FUNC_REBOOT)
+    uint32_t flags = disable_interface_mask;
+    if (usb_activity_gpio_pin >= 0) {
+        flags |= BOOTSEL_FLAG_GPIO_PIN_SPECIFIED;
+        if (usb_activity_gpio_pin_active_low) {
+            flags |= BOOTSEL_FLAG_GPIO_PIN_ACTIVE_LOW;
+        }
+    }
+    rom_reboot(REBOOT2_FLAG_REBOOT_TYPE_BOOTSEL | REBOOT2_FLAG_NO_RETURN_ON_SUCCESS, 10, flags, (uint)usb_activity_gpio_pin);
     __builtin_unreachable();
 #else
     panic_unsupported();

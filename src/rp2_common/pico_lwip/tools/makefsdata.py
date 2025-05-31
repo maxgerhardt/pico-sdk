@@ -1,30 +1,8 @@
 #!/usr/bin/env python3
 import argparse
+import mimetypes
 from pathlib import Path
-
-file_types = {
-    "html": "text/html",
-    "htm":  "text/html",
-    "shtml": "text/html",
-    "shtm": "text/html",
-    "ssi":  "text/html",
-    "gif":  "image/gif",
-    "png":  "image/png",
-    "jpg":  "image/jpeg",
-    "bmp":  "image/bmp",
-    "ico":  "image/x-icon",
-    "class": "application/octet-stream",
-    "cls":  "application/octet-stream",
-    "js":   "application/javascript",
-    "ram":  "application/javascript",
-    "css":  "text/css",
-    "swf":  "application/x-shockwave-flash",
-    "xml":  "text/xml",
-    "xsl":  "application/pdf",
-    "pdf":  "text/xml",
-    "json": "application/json",
-    "svg":  "image/svg+xml"
-}
+import re
 
 response_types = {
   200: "HTTP/1.0 200 OK",
@@ -41,13 +19,14 @@ def process_file(input_dir, file):
     results = []
 
     # Check content type
-    content_type = file_types[file.suffix[1:].lower()]
+    content_type, _ = mimetypes.guess_type(file)
     if content_type is None:
-        raise RuntimeError(f"Unsupported file type {file.suffix}")
+        content_type = "application/octet-stream"
 
-    # file name
-    data = f"/{file.relative_to(input_dir)}\x00"
-    comment = f"\"/{file.relative_to(input_dir)}\" ({len(data)} chars)"
+    # file name with posix directory separators 
+    file_path_posix = file.relative_to(input_dir).as_posix()
+    data = f"/{file_path_posix}\x00"
+    comment = f"\"/{file_path_posix}\" ({len(data)} chars)"
     while(len(data) % PAYLOAD_ALIGNMENT != 0):
         data += "\x00"
     results.append({'data': bytes(data, "utf-8"), 'comment': comment});
@@ -103,8 +82,12 @@ def process_file_list(fd, input):
 
         # make a variable name
         var_name = str(file.relative_to(input_dir))
-        var_name = var_name.replace(".", "_")
-        var_name = var_name.replace("/", "_")
+        var_name = re.sub(r"\W+", "_", var_name, flags=re.ASCII)
+
+        # Add a suffix if the variable name is used already
+        if any(d["data_var"] == f"data_{var_name}" for d in data):
+            var_name += f"_{len(data)}"
+
         data_var = f"data_{var_name}"
         file_var = f"file_{var_name}"
 
@@ -112,7 +95,7 @@ def process_file_list(fd, input):
         fd.write(f"static const unsigned char {data_var}[] = {{\n")
         for entry in results:
             fd.write(f"\n    /* {entry['comment']} */\n")
-            byte_count = 0;
+            byte_count = 0
             for b in entry['data']:
                 if byte_count % 16 == 0:
                     fd.write("    ")
@@ -121,7 +104,7 @@ def process_file_list(fd, input):
                 if byte_count % 16 == 0:
                     fd.write("\n")
             if byte_count % 16 != 0:
-                 fd.write("\n")
+                fd.write("\n")
         fd.write(f"}};\n\n")
 
         # set the flags
@@ -165,6 +148,11 @@ def run_tool():
     )
     args = parser.parse_args()
     print(args.input)
+
+    mimetypes.init()
+    for ext in [".shtml", ".shtm", ".ssi"]:
+        mimetypes.add_type("text/html", ext)
+
     with open(args.output, "w") as fd:
         process_file_list(fd, args.input)
 

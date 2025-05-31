@@ -51,9 +51,9 @@ You can install the [Raspberry Pi Pico Visual Studio Code extension](https://mar
 These instructions are extremely terse, and Linux-based only. For detailed steps,
 instructions for other platforms, and just in general, we recommend you see [Raspberry Pi Pico-Series C/C++ SDK](https://rptl.io/pico-c-sdk)
 
-1. Install CMake (at least version 3.13), and a GCC cross compiler
+1. Install CMake (at least version 3.13), python 3, a native compiler, and a GCC cross compiler
    ```
-   sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+   sudo apt install cmake python3 build-essential gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
    ```
 1. Set up your project to point to use the Raspberry Pi Pico SDK
 
@@ -184,7 +184,7 @@ instructions for other platforms, and just in general, we recommend you see [Ras
    
    When building for a board other than the Raspberry Pi Pico, you should pass `-DPICO_BOARD=board_name` to the `cmake` command above, e.g. `cmake -DPICO_BOARD=pico2 ..` or `cmake -DPICO_BOARD=pico_w ..` to configure the SDK and build options accordingly for that particular board.
 
-   Specifying `PICO_BOARD=<booardname>` sets up various compiler defines (e.g. default pin numbers for UART and other hardware) and in certain 
+   Specifying `PICO_BOARD=<boardname>` sets up various compiler defines (e.g. default pin numbers for UART and other hardware) and in certain 
    cases also enables the use of additional libraries (e.g. wireless support when building for `PICO_BOARD=pico_w`) which cannot
    be built without a board which provides the requisite hardware functionality.
 

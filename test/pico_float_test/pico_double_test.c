@@ -17,6 +17,9 @@
 #include <math.h>
 #include <pico/double.h>
 #include "pico/stdlib.h"
+// Include sys/types.h before inttypes.h to work around issue with
+// certain versions of GCC and newlib which causes omission of PRIx64
+#include <sys/types.h>
 #include "inttypes.h"
 
 #define test_assert(x) ({ if (!(x)) { printf("Assertion failed: ");puts(#x);printf("  at " __FILE__ ":%d\n", __LINE__); exit(-1); } })
@@ -362,7 +365,13 @@ int main() {
         printf("EXP %10.18g\n", check_close1(exp, x));
         printf("LN %10.18g\n", check_close1(log, x));
         printf("POW %10.18f\n", check_close2(pow, x, x));
+#if LIB_PICO_DOUBLE_PICO && __clang_major__ == 15
+        // seem to be a compiler/linker bug here with calls to __real_trunc, so just call trunc rather than doing
+        // a closeness check - at least we will know that the call works
+        printf("TRUNC %10.18f\n", trunc(x));
+#else
         printf("TRUNC %10.18f\n", check_close1(trunc, x));
+#endif
         printf("LDEXP %10.18f\n", check_close2(ldexp, x, x));
         // todo come pack
     //    printf("FMOD %10.18f\n", check_close2(fmod, x, 3.0f));

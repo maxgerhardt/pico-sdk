@@ -284,6 +284,8 @@ void sleep_ms(uint32_t ms);
  *     return false; // timed out
  * }
  * ```
+ * NOTE: This method should always be used in a loop associated with checking another "event" variable, since
+ * processor events are a shared resource and can happen for a large number of reasons.
  *
  * @param timeout_timestamp the timeout time
  * @return true if the target time is reached, false otherwise
@@ -584,7 +586,7 @@ int64_t alarm_pool_remaining_alarm_time_us(alarm_pool_t *pool, alarm_id_t alarm_
  * @param pool the alarm_pool containing the alarm
  * @param alarm_id the alarm
  *
- * @return >=0 the number of microseconds before the next trigger (INT32_MAX if the number of ms is higher than can be represented0
+ * @return >=0 the number of milliseconds before the next trigger (INT32_MAX if the number of ms is higher than can be represented0
  * @return <0 if either the given alarm is not in progress or it has passed
  */
 int32_t alarm_pool_remaining_alarm_time_ms(alarm_pool_t *pool, alarm_id_t alarm_id);
@@ -686,7 +688,6 @@ static inline bool cancel_alarm(alarm_id_t alarm_id) {
  * \brief Return the time remaining before the next trigger of an alarm
  * \ingroup alarm
  *
- * @param pool the alarm_pool containing the alarm
  * @param alarm_id the alarm
  *
  * @return >=0 the number of microseconds before the next trigger
@@ -700,7 +701,7 @@ int64_t remaining_alarm_time_us(alarm_id_t alarm_id);
  *
  * @param alarm_id the alarm
  *
- * @return >=0 the number of microseconds before the next trigger (INT32_MAX if the number of ms is higher than can be represented0
+ * @return >=0 the number of milliseconds before the next trigger (INT32_MAX if the number of ms is higher than can be represented0
  * @return <0 if either the given alarm is not in progress or it has passed
  */
 int32_t remaining_alarm_time_ms(alarm_id_t alarm_id);
